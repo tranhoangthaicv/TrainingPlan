@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { SinhVien } from "../Modal/Modal";
 
 export default function TableSinhVien(props) {
   // Dung useSelector de lay du lieu ve tu reducer
@@ -96,10 +97,18 @@ export default function TableSinhVien(props) {
 
   const updateStudent = () => {
     // lấy data mà người dùng nhập vào
-    // tạo ra nhân viên mới
+      let _id = document.getElementById("id").value;
+      let _name = document.getElementById("name").value;
+      let _age = document.getElementById("age").value;
+      let _class = document.getElementById("class").value;
+    // Tao lop doi tuong moi
+      let newsinhVien = new SinhVien(_id,_name,_age,_class);
+      var index = mangSinhVien.findIndex( (id) => {
+          return id = newsinhVien.id;
+      })
+      console.log(index);  
     // tìm vị trí của nhân viên cần cập nhật trong danh sách nhân viên
     // cập nhật lại danhSachNhanVien
-    
     dispatch({
       type: "UPDATE_SINH_VIEN",
       mangSinhVien: mangSinhVien
