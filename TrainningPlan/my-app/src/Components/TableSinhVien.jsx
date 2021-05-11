@@ -96,19 +96,23 @@ export default function TableSinhVien(props) {
     document.getElementById("btn").style.display = "none";
     document.getElementById("btnupdate").style.display = "block";
     document.getElementById("id").disabled = true;
+    document.getElementById("name").value = document.getElementById("tdname").value;
+    document.getElementById("id").value = document.getElementById("tdid").value;
+    document.getElementById("age").value = document.getElementById("tdage").value;
+    document.getElementById("class").value = document.getElementById("tdclass").value;
   };
 
   // Update
 
-  const updateStudent = (id) => {
+  const updateStudent = () => {
     // Tim vi tri sinh vien can update
-    let index = mangSinhVien.findIndex((sinhVien) => {
-      return sinhVien.id === id;
-    });
+    let index = mangSinhVienNew.findIndex((sinhVien) => {
+      return sinhVien.id === document.getElementById("id").value;
+    })
     dispatch({
-      type: "UPDATE_SINH_VIEN",
-      mangSinhVien: mangSinhVien[index],
-    });
+      type : "UPDATE_SINH_VIEN",
+      mangSinhVien : mangSinhVienNew[index]
+    })
   };
 
   // Search
