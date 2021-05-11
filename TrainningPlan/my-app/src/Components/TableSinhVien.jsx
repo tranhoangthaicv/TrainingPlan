@@ -1,13 +1,16 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { SinhVien } from "../Modal/Modal";
 
 export default function TableSinhVien(props) {
   // Dung useSelector de lay du lieu ve tu reducer
-  let mangSinhVien = useSelector(
-    (state) => state.sinhVienReducer.mangSinhVien
-  );
-
+  let mangSinhVien = useSelector((state) => state.sinhVienReducer.mangSinhVien);
+  // SetState cho search
+  const [mangSinhVienNew,setMangSinhVienNew] = useState(mangSinhVien);
+  // Chay setMangSinhVienNew sau khi mangSinhVien thay doi
+  useEffect(()=>{
+      setMangSinhVienNew(mangSinhVien)
+  },[mangSinhVien])
+  // SetState cho form
   const [form, setForm] = useState({
     id: "",
     name: "",
@@ -15,13 +18,12 @@ export default function TableSinhVien(props) {
     class: "",
   });
 
-  console.log(form);
   // Dung useDispatch de dispatch du lieu len reducer
   const dispatch = useDispatch();
 
   // Ham hien thi giao dien table
   const renderTable = () => {
-    return mangSinhVien.map((sinhVien, index) => {
+    return mangSinhVienNew.map((sinhVien, index) => {
       return (
         <tr key={index}>
           <td id="tdid">{sinhVien.id}</td>
@@ -54,84 +56,85 @@ export default function TableSinhVien(props) {
   };
 
   // Set state khi thay doi
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     // Set state tuong ung voi name
-    setForm({...form,[name]: value});
+    setForm({ ...form, [name]: value });
   };
 
-
   // Them sinh vien
+
   const addStudent = () => {
     // them doi tuong vao mangSinhVien
-    mangSinhVien=[...mangSinhVien,form];
+    mangSinhVien = [...mangSinhVien, form];
     console.log(form);
     // Dua du lieu len reducer
     dispatch({
       type: "ADD_SINH_VIEN",
-      mangSinhVien: mangSinhVien
+      mangSinhVien: mangSinhVien,
     });
-  }
+  };
 
   // Xoa sinh vien
+
   const deleteStudent = (id) => {
-    let mangSinhVienM = mangSinhVien.filter((sinhVien)=>{
-      return sinhVien.id !== id
-    })
-    console.log(mangSinhVienM);
+    let mangSinhVienDelete = mangSinhVien.filter((sinhVien) => {
+      return sinhVien.id !== id;
+    });
     // Dispatch du lieu len reducer
     dispatch({
       type: "DELETE_SINH_VIEN",
-      mangSinhVien: mangSinhVienM
+      mangSinhVien: mangSinhVienDelete,
     });
   };
 
   // Sua sinh vien
 
   const repairStudent = () => {
-      // Sua UI
-      document.getElementById("content").innerHTML = "Change Information";
-      document.getElementById("btn").innerHTML = "Update Student";
-
+    document.getElementById("content").innerHTML = "Change Information";
+    document.getElementById("btn").style.display = "none";
+    document.getElementById("btnupdate").style.display = "block";
+    document.getElementById("id").disabled = true;
   };
 
-  const updateStudent = () => {
-    // lấy data mà người dùng nhập vào
-      let _id = document.getElementById("id").value;
-      let _name = document.getElementById("name").value;
-      let _age = document.getElementById("age").value;
-      let _class = document.getElementById("class").value;
-    // Tao lop doi tuong moi
-      let newsinhVien = new SinhVien(_id,_name,_age,_class);
-      var index = mangSinhVien.findIndex( (id) => {
-          return id = newsinhVien.id;
-      })
-      console.log(index);  
-    // tìm vị trí của nhân viên cần cập nhật trong danh sách nhân viên
-    // cập nhật lại danhSachNhanVien
+  // Update
+
+  const updateStudent = (id) => {
+    // Tim vi tri sinh vien can update
+    let index = mangSinhVien.findIndex((sinhVien) => {
+      return sinhVien.id === id;
+    });
     dispatch({
       type: "UPDATE_SINH_VIEN",
-      mangSinhVien: mangSinhVien
+      mangSinhVien: mangSinhVien[index],
     });
   };
 
   // Search
-  document.getElementById("search")
-  .addEventListener("keyup",function(event){
-      let keyWord = event.target.value;
-      let mangSinhVien = mangSinhVien.filter((sinhVien) => {
-          return sinhVien.name.includes(keyWord);
-      })
-  })
+
+  const handleSearch = (e) => {
+    let keyWord = e.target.value;
+    setMangSinhVienNew(mangSinhVien.filter((sinhVien)=>{
+      return sinhVien.name.includes(keyWord);
+  }))
+    // dispatch({
+    //   type: "SEARCH_SINH_VIEN",
+    //   keyWord: keyWord
+    // });
+  };
 
   return (
     <div className="container">
       <h1 align="center">Look up student</h1>
       <div>
-        <h3  style={{ display: "inline" }}>Search</h3>
-        <input id="search"
-          style={{ display: "inline", width: "500px", marginLeft: "20px" }}
-        ></input>
+        <input
+          onChange={(e) => handleSearch(e)}
+          type="text"
+          className="form-control"
+          placeholder="Search Name's Student"
+          id="searchName"
+        />
       </div>
       <br></br>
       <div className="container">
@@ -155,6 +158,11 @@ export default function TableSinhVien(props) {
           className="btn btn-primary btn-lg"
           data-toggle="modal"
           data-target="#modelId"
+          onClick={() => {
+            document.getElementById("btnupdate").style.display = "none";
+            document.getElementById("btn").style.display = "block";
+            document.getElementById("id").disabled = false;
+          }}
         >
           Add Student
         </button>
@@ -170,7 +178,9 @@ export default function TableSinhVien(props) {
           <div className="modal-dialog" role="document">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 id="content" className="modal-title">Add Student</h5>
+                <h5 id="content" className="modal-title">
+                  Add Student
+                </h5>
                 <button
                   type="button"
                   className="close"
@@ -185,7 +195,7 @@ export default function TableSinhVien(props) {
                   <div className="form-group">
                     <label htmlFor="formGroupExampleInput">ID</label>
                     <input
-                      id = "id"
+                      id="id"
                       value={form.id}
                       name="id"
                       type="text"
@@ -197,7 +207,7 @@ export default function TableSinhVien(props) {
                   <div className="form-group">
                     <label htmlFor="formGroupExampleInput2">Name</label>
                     <input
-                      id = "name"
+                      id="name"
                       value={form.name}
                       name="name"
                       type="text"
@@ -209,7 +219,7 @@ export default function TableSinhVien(props) {
                   <div className="form-group">
                     <label htmlFor="formGroupExampleInput3">Age</label>
                     <input
-                      id = "age"
+                      id="age"
                       value={form.age}
                       name="age"
                       type="text"
@@ -221,7 +231,7 @@ export default function TableSinhVien(props) {
                   <div className="form-group">
                     <label htmlFor="formGroupExampleInput4">Class</label>
                     <input
-                      id = "class"
+                      id="class"
                       value={form.class}
                       name="class"
                       type="text"
@@ -241,7 +251,7 @@ export default function TableSinhVien(props) {
                   Close
                 </button>
                 <button
-                  id = "btn"
+                  id="btn"
                   type="button"
                   className="btn btn-primary"
                   onClick={() => {
@@ -249,6 +259,16 @@ export default function TableSinhVien(props) {
                   }}
                 >
                   Add Student
+                </button>
+                <button
+                  id="btnupdate"
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    updateStudent();
+                  }}
+                >
+                  Update Student
                 </button>
               </div>
             </div>
