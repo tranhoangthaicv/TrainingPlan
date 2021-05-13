@@ -1,16 +1,37 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Validator } from "./Validation";
+// import Icon from '@material-ui/core/Icon';
 
 export default function TableSinhVien(props) {
-  // Dung useSelector de lay du lieu ve tu reducer
+  // Hàm lấy data từ reducer
   let mangSinhVien = useSelector((state) => state.sinhVienReducer.mangSinhVien);
-  // SetState cho search
-  const [mangSinhVienNew,setMangSinhVienNew] = useState(mangSinhVien);
-  // Chay setMangSinhVienNew sau khi mangSinhVien thay doi
-  useEffect(()=>{
-      setMangSinhVienNew(mangSinhVien)
-  },[mangSinhVien])
-  // SetState cho form
+
+  // Use Ref
+  const contentRef = useRef();
+  const btnUpdateRef = useRef();
+  const btnAddRef = useRef();
+  const inputIdRef = useRef();
+  const inputNameRef = useRef();
+  const inputAgeRef = useRef();
+  const inputClassRef = useRef();
+  const idTb = useRef();
+  const nameTb = useRef();
+  const ageTb = useRef();
+  const classTbao = useRef();
+
+  // Hàm setState
+  const [mangSinhVienNew, setMangSinhVienNew] = useState(mangSinhVien);
+
+  // Hàm dispatch action
+  const dispatch = useDispatch();
+
+  // setState lại giao diện sau khi mangSinhVien , dispatch thay đổi
+  useEffect(() => {
+    setMangSinhVienNew(mangSinhVien);
+  }, [mangSinhVien]);
+
+  // setState cho Form
   const [form, setForm] = useState({
     id: "",
     name: "",
@@ -18,18 +39,15 @@ export default function TableSinhVien(props) {
     class: "",
   });
 
-  // Dung useDispatch de dispatch du lieu len reducer
-  const dispatch = useDispatch();
-
-  // Ham hien thi giao dien table
+  // Hàm hiển thị giao diện
   const renderTable = () => {
     return mangSinhVienNew.map((sinhVien, index) => {
       return (
         <tr key={index}>
-          <td id="tdid">{sinhVien.id}</td>
-          <td id="tdname">{sinhVien.name}</td>
-          <td id="tdage">{sinhVien.age}</td>
-          <td id="tdclass">{sinhVien.class}</td>
+          <td>{sinhVien.id}</td>
+          <td>{sinhVien.name}</td>
+          <td>{sinhVien.age}</td>
+          <td>{sinhVien.class}</td>
           <td>
             <button
               className="btn btn-danger mr-2"
@@ -44,7 +62,13 @@ export default function TableSinhVien(props) {
               data-toggle="modal"
               data-target="#modelId"
               onClick={() => {
-                repairStudent();
+                contentRef.current.innerHTML = "Change Information";
+                // btnUpdateRef.current.classList.add("d-block");
+                document.getElementById("btnAdd").style.display = "none";
+                // btnAddRef.current.classList.add("d-none");
+                document.getElementById("btnUpdate").style.display = "block";
+                inputIdRef.current.disabled = true;
+                repairStudent(index);
               }}
             >
               Repair
@@ -55,77 +79,88 @@ export default function TableSinhVien(props) {
     });
   };
 
-  // Set state khi thay doi
-
+  // Hàm lấy data người nhập từ Form bằng set lại state
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Set state tuong ung voi name
     setForm({ ...form, [name]: value });
   };
 
-  // Them sinh vien
-
+  // Validation
+  let validatorSinhVien = new Validator();
+  // Kiểm tra sinh viên đã tồn tại trong mảng
   const addStudent = () => {
-    // them doi tuong vao mangSinhVien
-    mangSinhVien = [...mangSinhVien, form];
-    console.log(form);
-    // Dua du lieu len reducer
-    dispatch({
-      type: "ADD_SINH_VIEN",
-      mangSinhVien: mangSinhVien,
-    });
+    // Validation
+    let isValid =
+      validatorSinhVien.kiemTraRong(form.id, idTb) &&
+      validatorSinhVien.kiemTraExist(form.id, mangSinhVienNew, idTb);
+    isValid &=
+      validatorSinhVien.kiemTraRong(form.name, nameTb) &&
+      validatorSinhVien.kiemTraString(form.name, nameTb);
+    isValid &=
+      validatorSinhVien.kiemTraRong(form.age, ageTb) &&
+      validatorSinhVien.kiemTraSo(form.age, ageTb);
+    isValid &= validatorSinhVien.kiemTraRong(form.class, classTbao);
+
+    if (isValid) {
+      alert("Thêm thành công");
+      dispatch({
+        type: "ADD_SINH_VIEN",
+        sinhVien: form,
+      });
+    }
   };
 
-  // Xoa sinh vien
-
+  // Hàm xóa sinh viên
   const deleteStudent = (id) => {
-    let mangSinhVienDelete = mangSinhVien.filter((sinhVien) => {
-      return sinhVien.id !== id;
-    });
-    // Dispatch du lieu len reducer
     dispatch({
       type: "DELETE_SINH_VIEN",
-      mangSinhVien: mangSinhVienDelete,
+      idDelete: id,
     });
   };
 
-  // Sua sinh vien
-
-  const repairStudent = () => {
-    document.getElementById("content").innerHTML = "Change Information";
-    document.getElementById("btn").style.display = "none";
-    document.getElementById("btnupdate").style.display = "block";
-    document.getElementById("id").disabled = true;
-    document.getElementById("name").value = document.getElementById("tdname").value;
-    document.getElementById("id").value = document.getElementById("tdid").value;
-    document.getElementById("age").value = document.getElementById("tdage").value;
-    document.getElementById("class").value = document.getElementById("tdclass").value;
+  // Hàm sửa lại UI khi sửa lại Form nhập
+  const repairStudent = (index) => {
+    console.log(index);
+    setForm(mangSinhVienNew[index]);
   };
 
-  // Update
+  // Hàm Update gửi dữ liệu cần thay đổi lên Reducer
 
   const updateStudent = () => {
-    // Tim vi tri sinh vien can update
-    let index = mangSinhVienNew.findIndex((sinhVien) => {
-      return sinhVien.id === document.getElementById("id").value;
-    })
-    dispatch({
-      type : "UPDATE_SINH_VIEN",
-      mangSinhVien : mangSinhVienNew[index]
-    })
+    let isValid =
+      validatorSinhVien.kiemTraRong(form.name, nameTb) &&
+      validatorSinhVien.kiemTraString(form.name, nameTb);
+    isValid &=
+      validatorSinhVien.kiemTraRong(form.age, ageTb) &&
+      validatorSinhVien.kiemTraSo(form.age, ageTb);
+    isValid &= validatorSinhVien.kiemTraRong(form.class, classTbao);
+
+    if (isValid) {
+        alert("Update thành công");
+        dispatch({
+          type: "UPDATE_SINH_VIEN",
+          sinhVien: form
+        });
+    }
   };
 
   // Search
-
   const handleSearch = (e) => {
     let keyWord = e.target.value;
-    setMangSinhVienNew(mangSinhVien.filter((sinhVien)=>{
-      return sinhVien.name.includes(keyWord);
-  }))
-    // dispatch({
-    //   type: "SEARCH_SINH_VIEN",
-    //   keyWord: keyWord
-    // });
+    console.log(keyWord);
+    let keyWordLowerCase = e.target.value.toLowerCase();
+    console.log(keyWordLowerCase);
+    let keywordUpperCase = e.target.value.toUpperCase();
+    console.log(keywordUpperCase);
+    setMangSinhVienNew(
+      mangSinhVien.filter((sinhVien) => {
+        return (
+          sinhVien.name.includes(keyWord) ||
+          sinhVien.name.includes(keywordUpperCase) ||
+          sinhVien.name.includes(keyWordLowerCase)
+        );
+      })
+    );
   };
 
   return (
@@ -139,6 +174,7 @@ export default function TableSinhVien(props) {
           placeholder="Search Name's Student"
           id="searchName"
         />
+        {/* <span class="material-icons-outlined">search</span> */}
       </div>
       <br></br>
       <div className="container">
@@ -155,7 +191,6 @@ export default function TableSinhVien(props) {
         </table>
       </div>
       <div>
-        {/* Button trigger modal */}
         <button
           style={{ fontSize: "15px" }}
           type="button"
@@ -163,14 +198,22 @@ export default function TableSinhVien(props) {
           data-toggle="modal"
           data-target="#modelId"
           onClick={() => {
-            document.getElementById("btnupdate").style.display = "none";
-            document.getElementById("btn").style.display = "block";
-            document.getElementById("id").disabled = false;
+            contentRef.current.innerHTML = "Add Student";
+            inputIdRef.current.disabled = false;
+            // btnUpdateRef.current.classList.add("d-none");
+            document.getElementById("btnAdd").style.display = "block";
+            document.getElementById("btnUpdate").style.display = "none";
+            setForm({
+              id: "",
+              name: "",
+              age: "",
+              class: "",
+            });
           }}
         >
           Add Student
         </button>
-        {/* Modal */}
+
         <div
           className="modal fade"
           id="modelId"
@@ -182,7 +225,7 @@ export default function TableSinhVien(props) {
           <div className="modal-dialog" role="document">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 id="content" className="modal-title">
+                <h5 ref={contentRef} className="modal-title">
                   Add Student
                 </h5>
                 <button
@@ -195,11 +238,11 @@ export default function TableSinhVien(props) {
                 </button>
               </div>
               <div className="modal-body">
-                <form>
+                <form role="form" id="formSV">
                   <div className="form-group">
                     <label htmlFor="formGroupExampleInput">ID</label>
                     <input
-                      id="id"
+                      ref={inputIdRef}
                       value={form.id}
                       name="id"
                       type="text"
@@ -207,11 +250,16 @@ export default function TableSinhVien(props) {
                       placeholder="Can you write ID"
                       onChange={(e) => handleChange(e)}
                     />
+                    <h5
+                      className="text-danger"
+                      ref={idTb}
+                      style={{ fontSize: 18, display: "none" }}
+                    ></h5>
                   </div>
                   <div className="form-group">
                     <label htmlFor="formGroupExampleInput2">Name</label>
                     <input
-                      id="name"
+                      ref={inputNameRef}
                       value={form.name}
                       name="name"
                       type="text"
@@ -219,11 +267,16 @@ export default function TableSinhVien(props) {
                       placeholder="Can you write Name"
                       onChange={(e) => handleChange(e)}
                     />
+                    <h5
+                      className="text-danger"
+                      ref={nameTb}
+                      style={{ fontSize: 18, display: "none" }}
+                    ></h5>
                   </div>
                   <div className="form-group">
                     <label htmlFor="formGroupExampleInput3">Age</label>
                     <input
-                      id="age"
+                      ref={inputAgeRef}
                       value={form.age}
                       name="age"
                       type="text"
@@ -231,11 +284,16 @@ export default function TableSinhVien(props) {
                       placeholder="Can you write Age"
                       onChange={(e) => handleChange(e)}
                     />
+                    <h5
+                      className="text-danger"
+                      ref={ageTb}
+                      style={{ fontSize: 18, display: "none" }}
+                    ></h5>
                   </div>
                   <div className="form-group">
                     <label htmlFor="formGroupExampleInput4">Class</label>
                     <input
-                      id="class"
+                      ref={inputClassRef}
                       value={form.class}
                       name="class"
                       type="text"
@@ -243,6 +301,11 @@ export default function TableSinhVien(props) {
                       placeholder="Can you write Class"
                       onChange={(e) => handleChange(e)}
                     />
+                    <h5
+                      className="text-danger"
+                      ref={classTbao}
+                      style={{ fontSize: 18, display: "none" }}
+                    ></h5>
                   </div>
                 </form>
               </div>
@@ -255,7 +318,8 @@ export default function TableSinhVien(props) {
                   Close
                 </button>
                 <button
-                  id="btn"
+                  // ref={btnAddRef}
+                  id="btnAdd"
                   type="button"
                   className="btn btn-primary"
                   onClick={() => {
@@ -265,7 +329,8 @@ export default function TableSinhVien(props) {
                   Add Student
                 </button>
                 <button
-                  id="btnupdate"
+                  id="btnUpdate"
+                  // ref={btnUpdateRef}
                   type="button"
                   className="btn btn-primary"
                   onClick={() => {
